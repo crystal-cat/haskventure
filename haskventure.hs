@@ -1,30 +1,40 @@
 import Adventure
 import AdventureSelect
+import Scene
 
 data GameState
     = ChoosingAdventure
-    | HavingAdventure Adventure
+    | StartingAdventure Adventure
+    | HavingAdventure Adventure Scene
     | Quitting
 
 
 instance Eq GameState where
     ChoosingAdventure == ChoosingAdventure = True
-    HavingAdventure x == HavingAdventure y = x == y
+    StartingAdventure x == StartingAdventure y = x == y
+    HavingAdventure x a == HavingAdventure y b = x == y && a == b
     Quitting == Quitting = True
     _ == _ = False
 
 
 runAdventure :: Adventure -> IO GameState
 runAdventure adventure = do
-    putStrLn "We're having an adventure!"
-    print adventure
-    return Quitting
+    let title = show adventure
+    putStrLn ""
+    putStrLn title
+    putStrLn . (take $ length title) $ repeat '='
+    putStrLn ""
+    return $ HavingAdventure adventure "start"
 
 runGameLogic :: GameState -> IO GameState
 runGameLogic ChoosingAdventure = do
     adventure <- runAdventureSelector
-    return $ HavingAdventure adventure
-runGameLogic (HavingAdventure a) = runAdventure a
+    return $ StartingAdventure adventure
+runGameLogic (StartingAdventure a) = runAdventure a
+runGameLogic (HavingAdventure a s) =
+    case (runScene a s) of
+        Just newScene -> return $ HavingAdventure a newScene
+        Nothing -> return Quitting
 runGameLogic _ = return Quitting
 
 gameLoop :: GameState -> IO ()
