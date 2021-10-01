@@ -31,8 +31,9 @@ runGameLogic ChoosingAdventure = do
     adventure <- runAdventureSelector
     return $ StartingAdventure adventure
 runGameLogic (StartingAdventure a) = runAdventure a
-runGameLogic (HavingAdventure a s) =
-    case (runScene a s) of
+runGameLogic (HavingAdventure a s) = do
+    nextScene <- runScene a s
+    case nextScene of
         Just newScene -> return $ HavingAdventure a newScene
         Nothing -> return Quitting
 runGameLogic _ = return Quitting
