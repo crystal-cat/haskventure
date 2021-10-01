@@ -1,41 +1,28 @@
-{-# LANGUAGE DeriveGeneric #-}
+import AdventureSelect
 
-import Data.Yaml
-import GHC.Generics
-import System.Directory
-import System.FilePath
-
-import MultipleChoice
+data GameState
+    = ChoosingAdventure
+    | HavingAdventure Adventure
+    | Quitting
 
 
-data Adventure = Adventure {
-    name :: String,
-    author :: String,
-    version :: String
-} deriving (Generic)
+instance Eq GameState where
+    ChoosingAdventure == ChoosingAdventure = True
+    HavingAdventure x == HavingAdventure y = x == y
+    Quitting == Quitting = True
+    _ == _ = False
 
-instance FromJSON Adventure
+runGameLogic :: GameState -> IO GameState
+runGameLogic ChoosingAdventure = do
+    adventure <- runAdventureSelector
+    return $ HavingAdventure adventure
+runGameLogic _ = return Quitting
 
-instance Show Adventure where
-    show (Adventure name author version) =
-        name ++ ", version " ++ version ++ ", by " ++ author
+gameLoop :: GameState -> IO ()
+gameLoop state = do
+    newState <- runGameLogic state
+    if newState == Quitting then return () else gameLoop newState
 
-tryReadAdventure :: FilePath -> IO (Maybe Adventure)
-tryReadAdventure = decodeFile
-
-extractJust :: [Maybe a] -> [a]
-extractJust a = [x | (Just x) <- a]
-
-getAdventures :: IO [Adventure]
-getAdventures = do
-    subdirs <- listDirectory "adventures"
-    maybeAdventures <- sequence $ [tryReadAdventure ("adventures" </> dir </> "about.yaml") | dir <- subdirs]
-    return $ extractJust maybeAdventures
-
-main = do
-    putStrLn "Welcome to Haskventure!\n"
-    putStrLn "These are the available adventures:"
-    adventures <- getAdventures
-    myAdventure <- multipleChoice adventures
-    putStrLn $ "You chose " ++ myAdventure
+main :: IO ()
+main = gameLoop ChoosingAdventure
 
