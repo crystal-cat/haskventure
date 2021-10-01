@@ -1,34 +1,13 @@
-{-# LANGUAGE DeriveGeneric #-}
-
 module AdventureSelect (
-    Adventure,
     runAdventureSelector
 ) where
 
 
-import Data.Yaml
-import GHC.Generics
+import Adventure
+import MultipleChoice
 import System.Directory
 import System.FilePath
 
-import MultipleChoice
-
-
-data Adventure = Adventure {
-    name :: String,
-    author :: String,
-    version :: String
-} deriving (Generic, Eq)
-
-instance FromJSON Adventure
-
-instance Show Adventure where
-    show (Adventure name author version) =
-        name ++ ", version " ++ version ++ ", by " ++ author
-
-
-tryReadAdventure :: FilePath -> IO (Maybe Adventure)
-tryReadAdventure = decodeFile
 
 extractJust :: [Maybe a] -> [a]
 extractJust a = [x | (Just x) <- a]

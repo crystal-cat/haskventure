@@ -1,3 +1,4 @@
+import Adventure
 import AdventureSelect
 
 data GameState
@@ -12,10 +13,18 @@ instance Eq GameState where
     Quitting == Quitting = True
     _ == _ = False
 
+
+runAdventure :: Adventure -> IO GameState
+runAdventure adventure = do
+    putStrLn "We're having an adventure!"
+    print adventure
+    return Quitting
+
 runGameLogic :: GameState -> IO GameState
 runGameLogic ChoosingAdventure = do
     adventure <- runAdventureSelector
     return $ HavingAdventure adventure
+runGameLogic (HavingAdventure a) = runAdventure a
 runGameLogic _ = return Quitting
 
 gameLoop :: GameState -> IO ()
