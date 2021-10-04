@@ -19,6 +19,7 @@ type Scene = String
 
 data Action
     = Print String
+    | Quit
 
 instance Show Action where
     show (Print str) = "Print " ++ str
@@ -52,14 +53,20 @@ findActionForKeyword cmds kw =
         Just (Keyword _ action) -> return (Just action)
         _ -> return Nothing
 
-executeAction :: Action -> IO ()
-executeAction (Print str) = putStrLn str
+executeAction :: Scene -> Action -> IO (Maybe Scene)
+executeAction _ Quit = return Nothing
+executeAction thisScene (Print str) = do
+    putStrLn str
+    return $ Just thisScene
+
+getBuiltinCmds :: [Command]
+getBuiltinCmds = [(Keyword "quit" Quit)]
 
 getKeywords :: [Command] -> [String]
 getKeywords cmds = [kw | (Keyword kw _) <- cmds]
 
 processScene :: String -> (String, [Command])
-processScene str = (text, cmds) where
+processScene str = (text, getBuiltinCmds ++ cmds) where
     (cmds', text') = partition isCommand $ lines str
     cmds = extractJust $ map parseCommand cmds'
     text = unlines text'
@@ -69,7 +76,9 @@ runScene adventure scene = do
     contents <- readFile $ getSceneFile adventure scene
     let (text, cmds) = processScene contents
     putStrLn text
-    print cmds
+    --print cmds
     input <- getChoice "> " $ getKeywords cmds
-    (findActionForKeyword cmds input) >>= (onValueDo executeAction $ return ())
-    return Nothing
+    maybeAction <- findActionForKeyword cmds input
+    case maybeAction of
+        Just action -> executeAction scene action
+        Nothing -> return $ Just scene
