@@ -19,10 +19,13 @@ type Scene = String
 
 data Action
     = Print String
+    | ChangeScene String
     | Quit
 
 instance Show Action where
     show (Print str) = "Print " ++ str
+    show (ChangeScene str) = "Go to scene " ++ str
+    show Quit = "Quit"
 
 data Command
     = Keyword String Action
@@ -40,11 +43,12 @@ isCommand (x:_) = (x == '!')
 
 parseCommandMatch :: [String] -> Maybe Command
 parseCommandMatch ["kw", kw, "print", msg] = Just $ Keyword kw $ Print msg
+parseCommandMatch ["kw", kw, "scene", s] = Just $ Keyword kw $ ChangeScene s
 parseCommandMatch _ = Nothing
 
 parseCommand :: String -> Maybe Command
 parseCommand str = (m >>= parseCommandMatch) where
-    r = mkRegex "!(kw):([a-zA-Z0-9]+) -> (print) (.*)"
+    r = mkRegex "!(kw):([a-zA-Z0-9]+) -> (print|scene) (.*)"
     m = matchRegex r str
 
 findActionForKeyword :: [Command] -> String -> IO (Maybe Action)
@@ -58,6 +62,7 @@ executeAction _ Quit = return Nothing
 executeAction thisScene (Print str) = do
     putStrLn str
     return $ Just thisScene
+executeAction _ (ChangeScene newScene) = return $ Just newScene
 
 getBuiltinCmds :: [Command]
 getBuiltinCmds = [(Keyword "quit" Quit)]
@@ -77,8 +82,21 @@ runScene adventure scene = do
     let (text, cmds) = processScene contents
     putStrLn text
     --print cmds
+    runSceneLoop adventure cmds scene
+
+runSceneLoop :: Adventure -> [Command] -> Scene -> IO (Maybe Scene)
+runSceneLoop adventure cmds scene = do
     input <- getChoice "> " $ getKeywords cmds
     maybeAction <- findActionForKeyword cmds input
-    case maybeAction of
+    result <- case maybeAction of
         Just action -> executeAction scene action
         Nothing -> return $ Just scene
+    case result of
+        Just newScene ->
+            if newScene == scene then
+                runSceneLoop adventure cmds scene
+            else
+                runScene adventure newScene
+        Nothing ->
+            runSceneLoop adventure cmds scene
+
