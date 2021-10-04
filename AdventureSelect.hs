@@ -1,16 +1,16 @@
 module AdventureSelect (
-    runAdventureSelector
+    runAdventureSelector,
+    extractJust
 ) where
 
 
 import Adventure
 import MultipleChoice
+import Utils
+
 import System.Directory
 import System.FilePath
 
-
-extractJust :: [Maybe a] -> [a]
-extractJust a = [x | (Just x) <- a]
 
 getAdventures :: IO [Adventure]
 getAdventures = do
@@ -23,5 +23,5 @@ runAdventureSelector = do
     putStrLn "Welcome to Haskventure!\n"
     putStrLn "These are the available adventures:"
     adventures <- getAdventures
-    multipleChoice adventures
+    multipleChoice "\nPlease make a selection: " adventures
 
