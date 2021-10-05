@@ -58,31 +58,12 @@ isCmdMatch :: String -> Command -> Bool
 isCmdMatch str (Keyword kw _) = (kw == str)
 isCmdMatch str (RegexMatch r _) = isRegexMatch r str
 
-findActionForKeyword :: [Command] -> String -> Maybe Action
-findActionForKeyword cmds str =
+findActionForInput :: [Command] -> String -> Maybe Action
+findActionForInput cmds str =
     case (find (isCmdMatch str) cmds) of
         Just (Keyword _ action) -> Just action
         Just (RegexMatch _ action) -> Just action
         _ -> Nothing
-
-foo :: Maybe [String] -> Action -> Maybe Action
-foo (Just _) action = Just action
-foo Nothing _ = Nothing
-
-findActionForRegexMatch :: [Command] -> String -> Maybe Action
-findActionForRegexMatch cmds input = do
-    let m = take 1 $ extractJust
-            [foo (matchRegex r input) action | (RegexMatch r action) <- cmds]
-    case m of
-        [] -> Nothing
-        [action] -> Just action
-
-findActionForInput :: [Command] -> String -> Maybe Action
-findActionForInput cmds input = do
-    let kwaction = findActionForKeyword cmds input
-    case kwaction of
-        Just action -> Just action
-        Nothing -> findActionForRegexMatch cmds input
 
 executeAction :: Scene -> Action -> IO (Maybe Scene)
 executeAction _ Quit = return Nothing
