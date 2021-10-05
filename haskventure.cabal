@@ -20,12 +20,18 @@ extra-source-files:  CHANGELOG.md
 executable haskventure
   main-is:             haskventure.hs
   other-modules:
-    MultipleChoice
+    Adventure,
+    AdventureSelect,
+    MultipleChoice,
+    Scene,
+    Utils
   -- other-extensions:
   build-depends:
     base >=4.13 && <4.14,
+    containers >= 0.6.2.1,
     directory >= 1.3.7,
     filepath >= 1.4.2,
+    regex-compat >= 0.95.2.0,
     yaml >= 0.11.6
   -- hs-source-dirs:
   default-language:    Haskell2010
