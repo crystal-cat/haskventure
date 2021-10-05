@@ -81,7 +81,7 @@ runScene adventure scene = do
     contents <- readFile $ getSceneFile adventure scene
     let (text, cmds) = processScene contents
     putStrLn text
-    --print cmds
+    --uprint cmds
     runSceneLoop adventure cmds scene
 
 runSceneLoop :: Adventure -> [Command] -> Scene -> IO (Maybe Scene)

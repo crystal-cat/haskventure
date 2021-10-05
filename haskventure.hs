@@ -1,3 +1,5 @@
+import Main.Utf8 (withUtf8)
+import Text.Show.Unicode
 import Adventure
 import AdventureSelect
 import Scene
@@ -19,7 +21,7 @@ instance Eq GameState where
 
 runAdventure :: Adventure -> IO GameState
 runAdventure adventure = do
-    let title = show adventure
+    let title = ushow adventure
     putStrLn ""
     putStrLn title
     putStrLn . (take $ length title) $ repeat '='
@@ -44,5 +46,6 @@ gameLoop state = do
     if newState == Quitting then return () else gameLoop newState
 
 main :: IO ()
-main = gameLoop ChoosingAdventure
+main = withUtf8 $
+    gameLoop ChoosingAdventure
 

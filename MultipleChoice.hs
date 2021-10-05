@@ -4,9 +4,10 @@ module MultipleChoice (
 ) where
 
 import qualified Data.Map.Strict as Map
+import Text.Show.Unicode
 
 printList :: Show a => [a] -> IO [()]
-printList items = sequence $ map (putStrLn . show) items
+printList items = sequence $ map (putStrLn . ushow) items
 
 getChoice :: String -> [String] -> IO String
 getChoice prompt valid_opts = do
