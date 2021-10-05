@@ -29,6 +29,7 @@ instance Show Action where
 
 data Command
     = Keyword String Action
+    | RegexMatch Regex Action
 
 instance Show Command where
     show (Keyword kw action) = "Keyword (" ++ kw ++ " -> " ++ (show action) ++ ")"
@@ -44,18 +45,44 @@ isCommand (x:_) = (x == '!')
 parseCommandMatch :: [String] -> Maybe Command
 parseCommandMatch ["kw", kw, "print", msg] = Just $ Keyword kw $ Print msg
 parseCommandMatch ["kw", kw, "scene", s] = Just $ Keyword kw $ ChangeScene s
+parseCommandMatch ["regex", r, "print", msg] = Just $ RegexMatch (mkRegex r) $ Print msg
+parseCommandMatch ["regex", r, "scene", s] = Just $ RegexMatch (mkRegex r) $ ChangeScene s
 parseCommandMatch _ = Nothing
 
 parseCommand :: String -> Maybe Command
 parseCommand str = (m >>= parseCommandMatch) where
-    r = mkRegex "!(kw):([a-zA-Z0-9]+) -> (print|scene) (.*)"
+    r = mkRegex "!(kw|regex):(.*) -> (print|scene) (.*)"
     m = matchRegex r str
 
-findActionForKeyword :: [Command] -> String -> IO (Maybe Action)
-findActionForKeyword cmds kw =
-    case (find (\(Keyword kw' action) -> (kw == kw')) cmds) of
-        Just (Keyword _ action) -> return (Just action)
-        _ -> return Nothing
+isCmdMatch :: String -> Command -> Bool
+isCmdMatch str (Keyword kw _) = (kw == str)
+isCmdMatch str (RegexMatch r _) = isRegexMatch r str
+
+findActionForKeyword :: [Command] -> String -> Maybe Action
+findActionForKeyword cmds str =
+    case (find (isCmdMatch str) cmds) of
+        Just (Keyword _ action) -> Just action
+        Just (RegexMatch _ action) -> Just action
+        _ -> Nothing
+
+foo :: Maybe [String] -> Action -> Maybe Action
+foo (Just _) action = Just action
+foo Nothing _ = Nothing
+
+findActionForRegexMatch :: [Command] -> String -> Maybe Action
+findActionForRegexMatch cmds input = do
+    let m = take 1 $ extractJust
+            [foo (matchRegex r input) action | (RegexMatch r action) <- cmds]
+    case m of
+        [] -> Nothing
+        [action] -> Just action
+
+findActionForInput :: [Command] -> String -> Maybe Action
+findActionForInput cmds input = do
+    let kwaction = findActionForKeyword cmds input
+    case kwaction of
+        Just action -> Just action
+        Nothing -> findActionForRegexMatch cmds input
 
 executeAction :: Scene -> Action -> IO (Maybe Scene)
 executeAction _ Quit = return Nothing
@@ -86,8 +113,9 @@ runScene adventure scene = do
 
 runSceneLoop :: Adventure -> [Command] -> Scene -> IO (Maybe Scene)
 runSceneLoop adventure cmds scene = do
-    input <- getChoice "> " $ getKeywords cmds
-    maybeAction <- findActionForKeyword cmds input
+    putStr "> "
+    input <- getLine
+    let maybeAction = findActionForInput cmds input
     result <- case maybeAction of
         Just action -> executeAction scene action
         Nothing -> return $ Just scene
