@@ -1,0 +1,7 @@
+This is the start scene.
+Another line of text.
+
+!kw:start -> print The first scene in the game is always called "start".
+!regex:begin|beginning|starting|Start -> print Nope, "start", written like that exactly.
+!kw:scene -> print The adventure consists of one or more scenes. Another one in this one is called "secret".
+!kw:secret -> scene secret
