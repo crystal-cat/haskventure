@@ -126,5 +126,5 @@ runSceneLoop adventure cmds scene = do
             else
                 runScene adventure newScene
         Nothing ->
-            runSceneLoop adventure cmds scene
+            return Nothing
 
