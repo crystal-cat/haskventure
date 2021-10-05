@@ -95,6 +95,7 @@ runScene adventure scene = do
 runSceneLoop :: Adventure -> [Command] -> Scene -> IO (Maybe Scene)
 runSceneLoop adventure cmds scene = do
     putStr "> "
+    hFlush stdout
     input <- getLine
     let maybeAction = findActionForInput cmds input
     result <- case maybeAction of
