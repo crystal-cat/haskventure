@@ -7,14 +7,14 @@ import Scene
 data GameState
     = ChoosingAdventure
     | StartingAdventure Adventure
-    | HavingAdventure Adventure Scene
+    | PlayingScene Scene
     | Quitting
 
 
 instance Eq GameState where
     ChoosingAdventure == ChoosingAdventure = True
     StartingAdventure x == StartingAdventure y = x == y
-    HavingAdventure x a == HavingAdventure y b = x == y && a == b
+    PlayingScene x == PlayingScene y = x == y
     Quitting == Quitting = True
     _ == _ = False
 
@@ -26,17 +26,17 @@ runAdventure adventure = do
     putStrLn title
     putStrLn . (take $ length title) $ repeat '='
     putStrLn ""
-    return $ HavingAdventure adventure "start"
+    return $ PlayingScene $ getFirstScene adventure
 
 runGameLogic :: GameState -> IO GameState
 runGameLogic ChoosingAdventure = do
     adventure <- runAdventureSelector
     return $ StartingAdventure adventure
 runGameLogic (StartingAdventure a) = runAdventure a
-runGameLogic (HavingAdventure a s) = do
-    nextScene <- runScene a s
+runGameLogic (PlayingScene s) = do
+    nextScene <- runScene s
     case nextScene of
-        Just newScene -> return $ HavingAdventure a newScene
+        Just newScene -> return $ PlayingScene newScene
         Nothing -> return Quitting
 runGameLogic _ = return Quitting
 

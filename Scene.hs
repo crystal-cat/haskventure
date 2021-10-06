@@ -1,5 +1,7 @@
 module Scene (
     Scene,
+    SceneName,
+    getFirstScene,
     runScene
 ) where
 
@@ -15,11 +17,16 @@ import System.FilePath
 import System.IO
 import Text.Regex
 
-type Scene = String
+type SceneName = String
+data Scene = Scene Adventure SceneName
+
+instance Eq Scene where
+    (Scene xadv xname) == (Scene yadv yname) =
+        (xadv == yadv) && (xname == yname)
 
 data Action
     = Print String
-    | ChangeScene String
+    | ChangeScene SceneName
     | Quit
 
 instance Show Action where
@@ -35,8 +42,11 @@ instance Show Command where
     show (Keyword kw action) = "Keyword (" ++ kw ++ " -> " ++ (show action) ++ ")"
 
 
-getSceneFile :: Adventure -> Scene -> FilePath
-getSceneFile a s = (getAdventurePath a) </> s ++ ".scene"
+getFirstScene :: Adventure -> Scene
+getFirstScene a = Scene a "start"
+
+getSceneFile :: Scene -> FilePath
+getSceneFile (Scene a s) = (getAdventurePath a) </> s ++ ".scene"
 
 isCommand :: String -> Bool
 isCommand [] = False
@@ -70,7 +80,8 @@ executeAction _ Quit = return Nothing
 executeAction thisScene (Print str) = do
     putStrLn str
     return $ Just thisScene
-executeAction _ (ChangeScene newScene) = return $ Just newScene
+executeAction (Scene a _) (ChangeScene sceneName) =
+    return $ Just $ Scene a sceneName
 
 getBuiltinCmds :: [Command]
 getBuiltinCmds = [(Keyword "quit" Quit)]
@@ -84,16 +95,16 @@ processScene str = (text, getBuiltinCmds ++ cmds) where
     cmds = extractJust $ map parseCommand cmds'
     text = unlines text'
 
-runScene :: Adventure -> Scene -> IO (Maybe Scene)
-runScene adventure scene = do
-    contents <- readFile $ getSceneFile adventure scene
+runScene :: Scene -> IO (Maybe Scene)
+runScene scene = do
+    contents <- readFile $ getSceneFile scene
     let (text, cmds) = processScene contents
     putStrLn text
     --uprint cmds
-    runSceneLoop adventure cmds scene
+    runSceneLoop scene cmds
 
-runSceneLoop :: Adventure -> [Command] -> Scene -> IO (Maybe Scene)
-runSceneLoop adventure cmds scene = do
+runSceneLoop :: Scene -> [Command] -> IO (Maybe Scene)
+runSceneLoop scene cmds = do
     putStr "> "
     hFlush stdout
     input <- getLine
@@ -104,9 +115,9 @@ runSceneLoop adventure cmds scene = do
     case result of
         Just newScene ->
             if newScene == scene then
-                runSceneLoop adventure cmds scene
+                runSceneLoop scene cmds
             else
-                runScene adventure newScene
+                runScene newScene
         Nothing ->
             return Nothing
 
